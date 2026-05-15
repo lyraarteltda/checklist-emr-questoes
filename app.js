@@ -164,7 +164,7 @@ async function loadEmr() {
   const loading = document.getElementById('emr-loading');
 
   try {
-    const items = await rest('checklist_items?order=position.asc,created_at.asc&select=id,title,position');
+    const items = await rpc('get_items_with_counts');
     loading.style.display = 'none';
     container.innerHTML = '';
 
@@ -174,16 +174,16 @@ async function loadEmr() {
     }
 
     const actionable = items.filter(i => !isHeader(i.title));
+    const checkedCount = actionable.filter(i => i.completed || i.entry_count > 0).length;
     const prog = document.getElementById('emr-progress');
     prog.classList.remove('hidden');
     prog.classList.add('flex');
-    document.getElementById('emr-progress-text').textContent = actionable.length + ' itens';
+    document.getElementById('emr-progress-text').textContent = checkedCount + ' / ' + actionable.length + ' itens';
 
     let html = '';
     items.forEach((item) => {
       const title = item.title.trim();
 
-      // Section header
       if (isSection(title)) {
         const clean = cleanTitle(title);
         const num = getSectionNum(title);
@@ -197,7 +197,6 @@ async function loadEmr() {
         return;
       }
 
-      // Etapa header
       if (isEtapa(title)) {
         const clean = cleanTitle(title);
         const label = getEtapaLabel(title);
@@ -211,24 +210,31 @@ async function loadEmr() {
         return;
       }
 
-      // Regular item
       const status = getStatus(title);
       const num = getItemNum(title);
       const clean = cleanTitle(title);
       const id = item.id;
+      const hasEntries = item.entry_count > 0;
+      const isChecked = item.completed || hasEntries;
+      const displayStatus = isChecked ? 'done' : status;
+      const completedClass = isChecked ? 'item-completed' : '';
 
       html += `
-        <div class="item-card status-${status} rounded-xl mb-2 overflow-hidden">
-          <button onclick="emrToggle(this)" class="w-full px-4 sm:px-5 py-3 flex items-start gap-3 text-left transition-colors" style="background:transparent;border:none;cursor:pointer;">
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
-                ${num ? `<span class="badge-num">${num}</span>` : ''}
-                ${badgeHtml(status)}
+        <div class="item-card status-${displayStatus} ${completedClass} rounded-xl mb-2 overflow-hidden">
+          <div class="w-full px-4 sm:px-5 py-3 flex items-start gap-3" style="background:transparent;">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="emrToggleItem('${id}')" class="check-box" style="margin-top:2px;flex-shrink:0;">
+            <button onclick="emrToggle(this)" class="flex items-start gap-3 text-left transition-colors" style="background:transparent;border:none;cursor:pointer;flex:1;min-width:0;padding:0;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+                  ${num ? `<span class="badge-num">${num}</span>` : ''}
+                  ${badgeHtml(displayStatus)}
+                  ${hasEntries ? `<span class="badge badge-count">${item.entry_count} enviado${item.entry_count > 1 ? 's' : ''}</span>` : ''}
+                </div>
+                <p style="font-size:13px;color:#cbd5e1;line-height:1.55;margin:0;">${escHtml(clean)}</p>
               </div>
-              <p style="font-size:13px;color:#cbd5e1;line-height:1.55;margin:0;">${escHtml(clean)}</p>
-            </div>
-            <svg class="chevron-icon" style="flex-shrink:0;margin-top:2px;" width="16" height="16" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
+              <svg class="chevron-icon" style="flex-shrink:0;margin-top:2px;" width="16" height="16" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+          </div>
           <div class="collapse-content">
             <div class="collapse-inner">
               <div style="padding:0 16px 16px;border-top:1px solid rgba(255,255,255,.04);" class="sm:px-5">
@@ -257,16 +263,23 @@ async function loadEmr() {
   }
 }
 
+async function emrToggleItem(id) {
+  try {
+    await rpc('toggle_item', { p_item_id: id });
+    loadEmr();
+  } catch (err) { toast('Erro ao atualizar.', 'error'); console.error(err); }
+}
+
 function emrToggle(btn) {
-  const body = btn.nextElementSibling;
+  const card = btn.closest('.item-card');
+  const body = card.querySelector('.collapse-content');
   const chev = btn.querySelector('.chevron-icon');
   const wasOpen = body.classList.contains('open');
 
-  // Close all others
   document.querySelectorAll('#emr-items .collapse-content.open').forEach(el => {
     if (el !== body) {
       el.classList.remove('open');
-      const c = el.previousElementSibling?.querySelector('.chevron-icon');
+      const c = el.closest('.item-card')?.querySelector('.chevron-icon');
       if (c) c.classList.remove('rotated');
     }
   });
@@ -299,18 +312,7 @@ async function submitEntry(itemId, btn) {
     btn.style.boxShadow = '0 2px 16px rgba(16,185,129,.3)';
     toast('Enviado com sucesso!');
 
-    setTimeout(() => {
-      btn.innerHTML = origHtml;
-      btn.disabled = false;
-      btn.style.background = '';
-      btn.style.boxShadow = '';
-      const body = btn.closest('.collapse-inner')?.parentElement;
-      if (body) {
-        body.classList.remove('open');
-        const chev = body.previousElementSibling?.querySelector('.chevron-icon');
-        if (chev) chev.classList.remove('rotated');
-      }
-    }, 1500);
+    setTimeout(() => { loadEmr(); }, 1200);
   } catch (err) {
     toast('Erro ao enviar.', 'error');
     btn.innerHTML = origHtml;
