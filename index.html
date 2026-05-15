@@ -4,193 +4,352 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checklist de Insumos — Agente 1</title>
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
-          colors: {
-            slate: { 925: '#0c1222' },
-            brand: { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
-            emerald: { 50:'#ecfdf5', 100:'#d1fae5', 400:'#34d399', 500:'#10b981', 600:'#059669' },
-            amber: { 50:'#fffbeb', 100:'#fef3c7', 400:'#fbbf24', 500:'#f59e0b', 600:'#d97706' },
-            rose: { 50:'#fff1f2', 100:'#ffe4e6', 400:'#fb7185', 500:'#f43f5e', 600:'#e11d48' },
-            violet: { 50:'#f5f3ff', 100:'#ede9fe', 400:'#a78bfa', 500:'#8b5cf6' },
-            sky: { 50:'#f0f9ff', 400:'#38bdf8', 500:'#0ea5e9' },
-            orange: { 50:'#fff7ed', 400:'#fb923c', 500:'#f97316' }
-          }
         }
       }
     }
   </script>
   <style>
-    * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-    body { background: #0f172a; }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,.5); }
-
-    /* Glass morphism */
-    .glass { background: rgba(15,23,42,.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(99,102,241,.15); }
-    .glass-light { background: rgba(255,255,255,.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.06); }
-
-    /* Toast */
-    .toast { animation: toastIn .4s cubic-bezier(.16,1,.3,1), toastOut .3s ease 2.4s forwards; }
-    @keyframes toastIn { from { transform: translateX(100%) scale(.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
-    @keyframes toastOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.95); } }
-
-    /* Section headers */
-    .section-header { background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(139,92,246,.08)); border-left: 3px solid #6366f1; }
-    .etapa-header { background: linear-gradient(135deg, rgba(56,189,248,.08), rgba(99,102,241,.06)); border-left: 3px solid #38bdf8; }
-
-    /* Item cards */
-    .item-card { transition: all .25s cubic-bezier(.16,1,.3,1); }
-    .item-card:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,0,0,.25); }
-    .item-card.critical { border-left: 3px solid #f43f5e; }
-    .item-card.partial { border-left: 3px solid #f59e0b; }
-    .item-card.pending { border-left: 3px solid rgba(148,163,184,.3); }
-
-    /* Collapse */
-    .collapse-body { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(.16,1,.3,1), opacity .25s ease; opacity: 0; }
-    .collapse-body.open { max-height: 600px; opacity: 1; }
-
-    /* Badge pulse for critical items */
-    .badge-critical { animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
-
-    /* Entry animation */
-    .entry-row { animation: entrySlide .3s cubic-bezier(.16,1,.3,1); }
-    @keyframes entrySlide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
-
-    /* Checkbox custom */
-    .custom-check { appearance: none; -webkit-appearance: none; width: 22px; height: 22px; border: 2px solid rgba(148,163,184,.3); border-radius: 6px; cursor: pointer; transition: all .2s ease; position: relative; flex-shrink: 0; background: rgba(255,255,255,.03); }
-    .custom-check:checked { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: transparent; }
-    .custom-check:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-    .custom-check:hover { border-color: rgba(99,102,241,.5); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
-    .custom-check:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
-
-    /* Submit button glow */
-    .btn-submit { background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 2px 12px rgba(99,102,241,.3); transition: all .2s ease; }
-    .btn-submit:hover { box-shadow: 0 4px 20px rgba(99,102,241,.5); transform: translateY(-1px); }
-    .btn-submit:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(99,102,241,.3); }
-
-    /* Progress bar */
-    .progress-fill { background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa); transition: width .6s cubic-bezier(.16,1,.3,1); }
-
-    /* Input focus glow */
-    .input-dark { background: rgba(255,255,255,.04); border: 1px solid rgba(148,163,184,.15); color: #e2e8f0; transition: all .2s ease; }
-    .input-dark:focus { background: rgba(255,255,255,.06); border-color: rgba(99,102,241,.5); box-shadow: 0 0 0 3px rgba(99,102,241,.1); outline: none; }
-    .input-dark::placeholder { color: rgba(148,163,184,.5); }
-
-    /* Login card */
-    .login-card { background: linear-gradient(145deg, rgba(15,23,42,.9), rgba(30,41,59,.8)); border: 1px solid rgba(99,102,241,.2); }
-
-    /* Gradient text */
-    .text-gradient { background: linear-gradient(135deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-
-    /* Ambient glow */
-    .ambient-glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: .07; pointer-events: none; z-index: 0; }
-
-    /* Smooth page transitions */
-    .page-enter { animation: pageIn .4s cubic-bezier(.16,1,.3,1); }
-    @keyframes pageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Admin title input */
-    .admin-title { background: transparent; border: none; border-bottom: 1px solid transparent; transition: all .2s ease; }
-    .admin-title:hover { border-bottom-color: rgba(148,163,184,.2); }
-    .admin-title:focus { border-bottom-color: rgba(99,102,241,.5); outline: none; box-shadow: 0 1px 0 0 rgba(99,102,241,.5); }
-
-    /* Floating label */
-    .floating-label { transition: all .2s ease; }
-
-    /* Responsive adjustments */
-    @media (max-width: 640px) {
-      .ambient-glow { width: 300px; height: 300px; }
-      .item-card:hover { transform: none; }
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-card: rgba(255,255,255,0.03);
+      --bg-card-hover: rgba(255,255,255,0.05);
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-hover: rgba(255,255,255,0.1);
+      --accent: #7c3aed;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(124,58,237,0.15);
+      --critical: #ef4444;
+      --critical-bg: rgba(239,68,68,0.08);
+      --critical-border: rgba(239,68,68,0.25);
+      --partial: #f59e0b;
+      --partial-bg: rgba(245,158,11,0.08);
+      --partial-border: rgba(245,158,11,0.25);
+      --pending: #64748b;
+      --pending-bg: rgba(100,116,139,0.06);
+      --pending-border: rgba(100,116,139,0.15);
+      --success: #10b981;
+      --success-bg: rgba(16,185,129,0.08);
+      --success-border: rgba(16,185,129,0.25);
     }
 
-    /* Delete button hover */
-    .btn-delete { opacity: 0; transition: opacity .2s ease; }
-    .entry-hover:hover .btn-delete { opacity: 1; }
-    @media (max-width: 640px) { .btn-delete { opacity: 1; } }
+    * { font-family: 'Inter', system-ui, -apple-system, sans-serif; box-sizing: border-box; }
+    body { background: var(--bg-primary); margin: 0; -webkit-font-smoothing: antialiased; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(124,58,237,.2); border-radius: 10px; }
+
+    /* ── Ambient Background ── */
+    .bg-mesh {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(124,58,237,.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59,130,246,.06) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 60% at 50% 50%, rgba(124,58,237,.03) 0%, transparent 50%);
+    }
+
+    /* ── Glass ── */
+    .glass {
+      background: rgba(10,14,26,.85);
+      backdrop-filter: blur(24px) saturate(1.2);
+      -webkit-backdrop-filter: blur(24px) saturate(1.2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* ── Login ── */
+    .login-card {
+      background: linear-gradient(165deg, rgba(20,24,40,.95), rgba(15,18,30,.98));
+      border: 1px solid rgba(124,58,237,.15);
+      box-shadow: 0 0 80px rgba(124,58,237,.06), 0 25px 50px rgba(0,0,0,.4);
+    }
+    .login-card:hover { border-color: rgba(124,58,237,.25); }
+
+    /* ── Inputs ── */
+    .input-field {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      color: #e2e8f0;
+      transition: all .2s ease;
+      font-size: 14px;
+    }
+    .input-field:focus {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(124,58,237,.5);
+      box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+      outline: none;
+    }
+    .input-field::placeholder { color: rgba(148,163,184,.4); }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      box-shadow: 0 2px 16px rgba(124,58,237,.3);
+      transition: all .2s ease;
+    }
+    .btn-primary:hover { box-shadow: 0 4px 24px rgba(124,58,237,.45); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* ── Section Headers ── */
+    .section-divider {
+      background: linear-gradient(135deg, rgba(124,58,237,.1), rgba(59,130,246,.05));
+      border: 1px solid rgba(124,58,237,.12);
+      position: relative;
+      overflow: hidden;
+    }
+    .section-divider::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: linear-gradient(180deg, #7c3aed, #6d28d9);
+    }
+    .section-divider::after {
+      content: '';
+      position: absolute; right: -50px; top: -50px; width: 150px; height: 150px;
+      background: radial-gradient(circle, rgba(124,58,237,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── Etapa Headers ── */
+    .etapa-divider {
+      background: rgba(56,189,248,.04);
+      border: 1px solid rgba(56,189,248,.1);
+      position: relative;
+    }
+    .etapa-divider::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+    }
+
+    /* ── Item Cards ── */
+    .item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: all .2s ease;
+      position: relative;
+    }
+    .item-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+    }
+    .item-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      border-radius: 3px 0 0 3px;
+      transition: opacity .2s ease;
+    }
+    .item-card.status-critical::before { background: var(--critical); }
+    .item-card.status-partial::before { background: var(--partial); }
+    .item-card.status-pending::before { background: var(--pending); opacity: .4; }
+    .item-card.status-done::before { background: var(--success); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+      line-height: 18px;
+    }
+    .badge-critical { background: var(--critical-bg); color: #fca5a5; border: 1px solid var(--critical-border); }
+    .badge-partial { background: var(--partial-bg); color: #fcd34d; border: 1px solid var(--partial-border); }
+    .badge-pending { background: var(--pending-bg); color: #94a3b8; border: 1px solid var(--pending-border); }
+    .badge-done { background: var(--success-bg); color: #6ee7b7; border: 1px solid var(--success-border); }
+    .badge-count { background: rgba(124,58,237,.1); color: var(--accent-light); border: 1px solid rgba(124,58,237,.15); }
+    .badge-num {
+      font-size: 10px; font-weight: 800; color: rgba(148,163,184,.5);
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+      padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Critical pulse ── */
+    .pulse-dot { animation: pulseDot 2s ease infinite; }
+    @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+    /* ── Collapse ── */
+    .collapse-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows .3s ease, opacity .2s ease;
+      opacity: 0;
+    }
+    .collapse-content.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+    .collapse-inner { overflow: hidden; }
+
+    /* ── Chevron ── */
+    .chevron-icon { transition: transform .25s ease; }
+    .chevron-icon.rotated { transform: rotate(180deg); }
+
+    /* ── Toast ── */
+    .toast-item {
+      animation: toastSlideIn .35s cubic-bezier(.22,1,.36,1);
+    }
+    .toast-item.removing {
+      animation: toastSlideOut .25s ease forwards;
+    }
+    @keyframes toastSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastSlideOut { from { opacity: 1; } to { transform: translateX(30px); opacity: 0; } }
+
+    /* ── Progress Bar ── */
+    .progress-track { background: rgba(255,255,255,.06); }
+    .progress-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      transition: width .5s cubic-bezier(.22,1,.36,1);
+      position: relative;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute; right: 0; top: -1px; bottom: -1px; width: 20px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.3));
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ── Custom Checkbox ── */
+    .check-box {
+      appearance: none; -webkit-appearance: none;
+      width: 20px; height: 20px; border-radius: 6px;
+      border: 2px solid rgba(148,163,184,.2);
+      background: rgba(255,255,255,.03);
+      cursor: pointer; transition: all .15s ease;
+      position: relative; flex-shrink: 0;
+    }
+    .check-box:hover { border-color: rgba(124,58,237,.4); background: rgba(124,58,237,.05); }
+    .check-box:checked {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border-color: transparent;
+    }
+    .check-box:checked::after {
+      content: ''; position: absolute; left: 5px; top: 1px;
+      width: 6px; height: 11px;
+      border: solid white; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* ── Entry animation ── */
+    .entry-item { animation: entryFadeIn .25s ease; }
+    @keyframes entryFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Delete hover reveal ── */
+    .reveal-on-hover { opacity: 0; transition: opacity .15s ease; }
+    .group:hover .reveal-on-hover { opacity: 1; }
+
+    /* ── Inline title edit ── */
+    .title-edit {
+      background: transparent; border: none;
+      border-bottom: 1px dashed transparent;
+      transition: all .15s ease; padding: 2px 0;
+    }
+    .title-edit:hover { border-bottom-color: rgba(148,163,184,.15); }
+    .title-edit:focus {
+      border-bottom-color: rgba(124,58,237,.5);
+      outline: none;
+    }
+
+    /* ── Page transition ── */
+    .page-in { animation: pageSlideIn .35s cubic-bezier(.22,1,.36,1); }
+    @keyframes pageSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .item-card:hover { background: var(--bg-card); border-color: var(--border-subtle); }
+      .reveal-on-hover { opacity: 1; }
+    }
+
+    /* ── Skeleton loading ── */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,.03) 25%, rgba(255,255,255,.06) 50%, rgba(255,255,255,.03) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+    /* ── Completed item style ── */
+    .item-completed { opacity: .5; }
+    .item-completed .item-title { text-decoration: line-through; }
   </style>
 </head>
 <body class="min-h-screen text-slate-200 overflow-x-hidden">
 
-  <!-- Ambient background glows -->
-  <div class="ambient-glow bg-brand-500" style="top:-200px;left:-200px;"></div>
-  <div class="ambient-glow bg-violet-500" style="bottom:-200px;right:-200px;"></div>
+  <div class="bg-mesh"></div>
 
-  <!-- Toast container -->
-  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none" style="max-width:360px;"></div>
 
   <!-- ============ LOGIN ============ -->
   <div id="page-login" class="flex items-center justify-center min-h-screen px-4 relative z-10">
-    <div class="login-card rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+    <div class="login-card rounded-2xl p-8 sm:p-10 w-full max-w-[380px]">
       <div class="text-center mb-8">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-500/20">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-violet-600/20 rotate-3">
+          <svg class="w-7 h-7 text-white -rotate-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <h1 class="text-2xl font-bold text-white">Checklist de Insumos</h1>
-        <p class="text-slate-400 text-sm mt-1.5">Agente 1 — Atualização de Questões e Flashcards</p>
+        <h1 class="text-xl font-bold text-white tracking-tight">Checklist de Insumos</h1>
+        <p class="text-slate-400 text-[13px] mt-1.5 leading-relaxed">Agente 1 — Questoes e Flashcards</p>
       </div>
       <form id="login-form" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Usuário</label>
-          <input id="login-user" type="text" required class="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="Seu usuário" autocomplete="username">
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Usuario</label>
+          <input id="login-user" type="text" required class="input-field w-full px-4 py-3 rounded-xl" placeholder="Seu usuario" autocomplete="username">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Senha</label>
-          <input id="login-pass" type="password" required class="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="Sua senha" autocomplete="current-password">
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Senha</label>
+          <input id="login-pass" type="password" required class="input-field w-full px-4 py-3 rounded-xl" placeholder="Sua senha" autocomplete="current-password">
         </div>
-        <div id="login-error" class="text-rose-400 text-sm hidden flex items-center gap-1.5">
+        <div id="login-error" class="hidden text-red-400 text-sm flex items-center gap-2 py-1">
           <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-          <span>Usuário ou senha incorretos.</span>
+          <span>Usuario ou senha incorretos.</span>
         </div>
-        <button type="submit" class="btn-submit w-full text-white font-semibold py-3 rounded-xl text-sm mt-2">Entrar</button>
+        <button type="submit" class="btn-primary w-full text-white font-semibold py-3 rounded-xl text-sm mt-2">Entrar</button>
       </form>
+      <p class="text-center text-[11px] text-slate-600 mt-6">Maestros da IA</p>
     </div>
   </div>
 
   <!-- ============ EMR VIEW ============ -->
   <div id="page-emr" class="hidden relative z-10">
     <header class="glass sticky top-0 z-40">
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
-            <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-          <div>
-            <h1 class="font-bold text-white text-sm leading-tight">Checklist de Insumos</h1>
-            <p class="text-[11px] text-slate-400">Equipe EMR</p>
+          <div class="min-w-0">
+            <h1 class="font-bold text-white text-sm leading-tight truncate">Checklist de Insumos</h1>
+            <p class="text-[11px] text-slate-500">Equipe EMR</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <div id="emr-progress-wrap" class="hidden sm:flex items-center gap-2">
-            <div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div id="emr-progress" class="hidden items-center gap-2.5">
+            <div class="progress-track w-20 sm:w-28 h-1.5 rounded-full overflow-hidden">
               <div id="emr-progress-bar" class="progress-fill h-full rounded-full" style="width:0%"></div>
             </div>
-            <span id="emr-progress-text" class="text-[11px] text-slate-400 font-medium tabular-nums"></span>
+            <span id="emr-progress-text" class="text-[11px] text-slate-500 font-medium whitespace-nowrap" style="font-variant-numeric:tabular-nums"></span>
           </div>
-          <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/5">Sair</button>
+          <button onclick="logout()" class="text-xs text-slate-500 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5">Sair</button>
         </div>
       </div>
     </header>
-    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-6 page-enter">
-      <div id="emr-items" class="space-y-2"></div>
-      <div id="emr-loading" class="flex items-center justify-center py-20">
-        <div class="flex items-center gap-3 text-slate-400">
-          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-          <span class="text-sm">Carregando checklist...</span>
-        </div>
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-5 pb-20 page-in">
+      <div id="emr-items"></div>
+      <div id="emr-loading" class="py-20 space-y-3">
+        <div class="skeleton h-12 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
       </div>
     </main>
   </div>
@@ -198,46 +357,50 @@
   <!-- ============ ADMIN VIEW ============ -->
   <div id="page-admin" class="hidden relative z-10">
     <header class="glass sticky top-0 z-40">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center shadow-lg shadow-brand-500/20">
-            <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-700 to-indigo-800 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </div>
-          <div>
+          <div class="min-w-0">
             <h1 class="font-bold text-white text-sm leading-tight">Painel Admin</h1>
-            <p class="text-[11px] text-slate-400">Gerenciamento completo</p>
+            <p class="text-[11px] text-slate-500">Gerenciamento completo</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <div id="admin-stats" class="hidden sm:flex items-center gap-3 mr-2">
-            <div class="flex items-center gap-1.5">
-              <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-              <span id="admin-stat-done" class="text-[11px] text-slate-400 font-medium tabular-nums">0</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <div class="w-2 h-2 rounded-full bg-slate-500"></div>
-              <span id="admin-stat-pending" class="text-[11px] text-slate-400 font-medium tabular-nums">0</span>
-            </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div id="admin-stats" class="hidden sm:flex items-center gap-3 mr-1">
+            <span class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span id="stat-done" class="text-[11px] text-slate-500 font-medium" style="font-variant-numeric:tabular-nums">0</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+              <span id="stat-critical" class="text-[11px] text-slate-500 font-medium" style="font-variant-numeric:tabular-nums">0</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+              <span id="stat-pending" class="text-[11px] text-slate-500 font-medium" style="font-variant-numeric:tabular-nums">0</span>
+            </span>
           </div>
-          <button onclick="adminAddItem()" class="btn-submit text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
+          <button onclick="adminAddItem()" class="btn-primary text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             <span class="hidden sm:inline">Adicionar</span>
           </button>
-          <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/5">Sair</button>
+          <button onclick="logout()" class="text-xs text-slate-500 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5">Sair</button>
         </div>
       </div>
     </header>
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 page-enter">
-      <div id="admin-items" class="space-y-2"></div>
-      <div id="admin-loading" class="flex items-center justify-center py-20">
-        <div class="flex items-center gap-3 text-slate-400">
-          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-          <span class="text-sm">Carregando painel...</span>
-        </div>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-5 pb-20 page-in">
+      <div id="admin-items"></div>
+      <div id="admin-loading" class="py-20 space-y-3">
+        <div class="skeleton h-12 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
+        <div class="skeleton h-16 w-full"></div>
       </div>
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

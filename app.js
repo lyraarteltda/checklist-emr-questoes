@@ -1,11 +1,7 @@
 const SUPABASE_URL = 'https://arsfqjhvgphsglouwdsn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyc2Zxamh2Z3Boc2dsb3V3ZHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxNjA3MDAsImV4cCI6MjA3MTczNjcwMH0.WvzZ9m2tyxT0XgnWOpOFGop8gMk7fgLVwFSIaNiH62Q';
 
-const USERS = {
-  emr:   { pass: 'emr',   role: 'emr' },
-  admin: { pass: 'admin', role: 'admin' }
-};
-
+const USERS = { emr: { pass: 'emr', role: 'emr' }, admin: { pass: 'admin', role: 'admin' } };
 let currentUser = null;
 
 const headers = {
@@ -14,72 +10,93 @@ const headers = {
   'Content-Type': 'application/json'
 };
 
-function isSection(title) { return title.startsWith('══'); }
-function isEtapa(title) { return title.startsWith('──'); }
+// ── Helpers ──
 
-function getItemType(title) {
-  if (title.startsWith('[!]')) return 'critical';
-  if (title.startsWith('[~]')) return 'partial';
-  if (title.startsWith('[x]')) return 'done';
-  if (title.startsWith('[ ]')) return 'pending';
+function isSection(t) { return t.trim().startsWith('══') || t.trim().startsWith('=='); }
+function isEtapa(t) { return t.trim().startsWith('──') || t.trim().startsWith('--'); }
+function isHeader(t) { return isSection(t) || isEtapa(t); }
+
+function getStatus(t) {
+  if (t.startsWith('[!]')) return 'critical';
+  if (t.startsWith('[~]')) return 'partial';
+  if (t.startsWith('[x]')) return 'done';
   return 'pending';
 }
 
-function cleanTitle(title) {
-  return title.replace(/^\[[\!\~x ]\]\s*/, '').replace(/^═+\s*/, '').replace(/\s*═+$/, '').replace(/^─+\s*/, '').replace(/\s*─+$/, '');
+function cleanTitle(t) {
+  return t
+    .replace(/^\[[\!\~x ]\]\s*/, '')
+    .replace(/^═+\s*/, '').replace(/\s*═+$/, '')
+    .replace(/^─+\s*/, '').replace(/\s*─+$/, '')
+    .replace(/^==+\s*/, '').replace(/\s*==+$/, '')
+    .replace(/^--+\s*/, '').replace(/\s*--+$/, '')
+    .trim();
 }
 
-function getBadge(type) {
-  const map = {
-    critical: '<span class="badge-critical inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/20">Crítico</span>',
-    partial:  '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/20">Parcial</span>',
-    pending:  '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-500/15 text-slate-400 border border-slate-500/20">Pendente</span>',
-    done:     '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Recebido</span>'
-  };
-  return map[type] || map.pending;
-}
-
-function getItemNumber(title) {
-  const m = title.match(/^(?:\[[\!\~x ]\]\s*)?(\d+\.\d+|[A-D]\.\d+)/);
+function getItemNum(t) {
+  const m = t.match(/(?:\[[\!\~x ]\]\s*)?(\d+\.\d+|[A-D]\.\d+)/);
   return m ? m[1] : null;
 }
 
-function showToast(msg, type = 'success') {
-  const c = document.getElementById('toast-container');
-  const icon = type === 'success'
-    ? '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
-    : '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
-  const bg = type === 'success' ? 'bg-emerald-500/90 border-emerald-400/30' : 'bg-rose-500/90 border-rose-400/30';
-  const t = document.createElement('div');
-  t.className = `toast flex items-center gap-2 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium text-white ${bg} border backdrop-blur-sm`;
-  t.innerHTML = `${icon}<span>${msg}</span>`;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 2800);
+function getSectionNum(t) {
+  const m = t.match(/SEÇÃO\s*(\d+)/i);
+  return m ? m[1] : null;
 }
 
-function formatDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+function getEtapaLabel(t) {
+  const m = t.match(/Etapa\s+([A-D])/i);
+  return m ? m[1] : null;
 }
 
-function escapeHtml(s) {
+function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
 }
 
 function timeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'agora';
-  if (mins < 60) return `${mins}min atrás`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h atrás`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d atrás`;
+  const ms = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return 'agora';
+  if (m < 60) return m + 'min';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h';
+  return Math.floor(h / 24) + 'd';
 }
 
-// --- Auth ---
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+function badgeHtml(status) {
+  const map = {
+    critical: '<span class="badge badge-critical"><span class="pulse-dot">●</span> Critico</span>',
+    partial:  '<span class="badge badge-partial">◐ Parcial</span>',
+    pending:  '<span class="badge badge-pending">○ Pendente</span>',
+    done:     '<span class="badge badge-done">✓ Concluido</span>'
+  };
+  return map[status] || map.pending;
+}
+
+// ── Toast ──
+
+function toast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const colors = type === 'success'
+    ? 'background:rgba(16,185,129,.92);border:1px solid rgba(52,211,153,.3);'
+    : 'background:rgba(239,68,68,.92);border:1px solid rgba(252,165,165,.3);';
+  const icon = type === 'success'
+    ? '<svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+    : '<svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
+  const el = document.createElement('div');
+  el.className = 'toast-item pointer-events-auto';
+  el.style.cssText = `${colors}color:white;font-size:13px;font-weight:500;padding:10px 16px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.3);backdrop-filter:blur(8px);`;
+  el.innerHTML = `${icon}<span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 300); }, 2500);
+}
+
+// ── Auth ──
 
 document.getElementById('login-form').addEventListener('submit', function(e) {
   e.preventDefault();
@@ -91,11 +108,10 @@ document.getElementById('login-form').addEventListener('submit', function(e) {
     showPage();
   } else {
     document.getElementById('login-error').classList.remove('hidden');
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.style.transform = 'translateX(-4px)';
-    setTimeout(() => btn.style.transform = 'translateX(4px)', 80);
-    setTimeout(() => btn.style.transform = 'translateX(-2px)', 160);
-    setTimeout(() => btn.style.transform = '', 240);
+    const card = document.querySelector('.login-card');
+    card.style.animation = 'none';
+    card.offsetHeight;
+    card.style.animation = 'shake .4s ease';
   }
 });
 
@@ -119,319 +135,372 @@ function showPage() {
   }
 }
 
-// --- Supabase REST ---
+// ── Supabase ──
 
 async function rest(path, opts = {}) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { ...headers, ...opts.headers }, method: opts.method || 'GET', body: opts.body });
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { ...headers, ...opts.headers },
+    method: opts.method || 'GET',
+    body: opts.body
+  });
   if (!r.ok) throw new Error(await r.text());
   const text = await r.text();
   return text ? JSON.parse(text) : null;
 }
 
 async function rpc(fn, params = {}) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(params) });
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST', headers, body: JSON.stringify(params)
+  });
   if (!r.ok) throw new Error(await r.text());
   const text = await r.text();
   return text ? JSON.parse(text) : null;
 }
 
-// --- EMR VIEW ---
+// ── EMR VIEW ──
 
 async function loadEmr() {
   const container = document.getElementById('emr-items');
   const loading = document.getElementById('emr-loading');
+
   try {
     const items = await rest('checklist_items?order=position.asc,created_at.asc&select=id,title,position');
-    loading.classList.add('hidden');
+    loading.style.display = 'none';
     container.innerHTML = '';
-    if (!items || items.length === 0) {
-      container.innerHTML = '<p class="text-center text-slate-500 py-12">Nenhum item no checklist.</p>';
+
+    if (!items || !items.length) {
+      container.innerHTML = '<p style="text-align:center;color:#64748b;padding:60px 0;">Nenhum item no checklist.</p>';
       return;
     }
 
-    const actionableItems = items.filter(i => !isSection(i.title) && !isEtapa(i.title));
-    document.getElementById('emr-progress-wrap').classList.remove('hidden');
-    document.getElementById('emr-progress-text').textContent = `${actionableItems.length} itens`;
+    const actionable = items.filter(i => !isHeader(i.title));
+    const prog = document.getElementById('emr-progress');
+    prog.classList.remove('hidden');
+    prog.classList.add('flex');
+    document.getElementById('emr-progress-text').textContent = actionable.length + ' itens';
 
-    items.forEach((item, idx) => {
-      if (isSection(item.title)) {
-        const sec = document.createElement('div');
-        const secTitle = cleanTitle(item.title);
-        sec.className = 'section-header rounded-xl px-4 sm:px-5 py-3 sm:py-4 mt-6 mb-3 first:mt-0';
-        sec.innerHTML = `<h2 class="text-xs sm:text-sm font-bold text-brand-300 uppercase tracking-wider">${escapeHtml(secTitle)}</h2>`;
-        container.appendChild(sec);
+    let html = '';
+    items.forEach((item) => {
+      const title = item.title.trim();
+
+      // Section header
+      if (isSection(title)) {
+        const clean = cleanTitle(title);
+        const num = getSectionNum(title);
+        html += `
+          <div class="section-divider rounded-xl px-4 sm:px-5 py-3 sm:py-4 mt-8 mb-3" style="margin-top:${html ? '32px' : '0'}">
+            <div class="flex items-center gap-2.5">
+              ${num ? `<span style="font-size:11px;font-weight:800;color:rgba(167,139,250,.6);background:rgba(124,58,237,.12);padding:2px 8px;border-radius:6px;letter-spacing:.05em;">S${num}</span>` : ''}
+              <h2 style="font-size:12px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;line-height:1.4;">${escHtml(clean)}</h2>
+            </div>
+          </div>`;
         return;
       }
 
-      if (isEtapa(item.title)) {
-        const et = document.createElement('div');
-        const etTitle = cleanTitle(item.title);
-        et.className = 'etapa-header rounded-lg px-4 py-2.5 mt-4 mb-2';
-        et.innerHTML = `<h3 class="text-xs font-semibold text-sky-300 uppercase tracking-wider">${escapeHtml(etTitle)}</h3>`;
-        container.appendChild(et);
+      // Etapa header
+      if (isEtapa(title)) {
+        const clean = cleanTitle(title);
+        const label = getEtapaLabel(title);
+        html += `
+          <div class="etapa-divider rounded-lg px-4 py-2.5 mt-5 mb-2">
+            <div class="flex items-center gap-2">
+              ${label ? `<span style="font-size:10px;font-weight:800;color:rgba(56,189,248,.7);background:rgba(56,189,248,.1);padding:2px 7px;border-radius:5px;letter-spacing:.04em;">Etapa ${label}</span>` : ''}
+              <h3 style="font-size:11px;font-weight:600;color:#7dd3fc;text-transform:uppercase;letter-spacing:.05em;">${escHtml(clean)}</h3>
+            </div>
+          </div>`;
         return;
       }
 
-      const type = getItemType(item.title);
-      const num = getItemNumber(item.title);
-      const title = cleanTitle(item.title);
-      const borderClass = type === 'critical' ? 'critical' : type === 'partial' ? 'partial' : 'pending';
+      // Regular item
+      const status = getStatus(title);
+      const num = getItemNum(title);
+      const clean = cleanTitle(title);
+      const id = item.id;
 
-      const card = document.createElement('div');
-      card.className = `item-card glass-light rounded-xl overflow-hidden ${borderClass}`;
-      card.innerHTML = `
-        <button onclick="toggleCollapse(this)" class="w-full px-4 sm:px-5 py-3.5 flex items-center gap-3 text-left hover:bg-white/[.03] transition group">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              ${num ? `<span class="text-[11px] font-bold text-slate-500 tabular-nums bg-slate-800/50 px-1.5 py-0.5 rounded">${num}</span>` : ''}
-              ${getBadge(type)}
+      html += `
+        <div class="item-card status-${status} rounded-xl mb-2 overflow-hidden">
+          <button onclick="emrToggle(this)" class="w-full px-4 sm:px-5 py-3 flex items-start gap-3 text-left transition-colors" style="background:transparent;border:none;cursor:pointer;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+                ${num ? `<span class="badge-num">${num}</span>` : ''}
+                ${badgeHtml(status)}
+              </div>
+              <p style="font-size:13px;color:#cbd5e1;line-height:1.55;margin:0;">${escHtml(clean)}</p>
             </div>
-            <p class="text-sm text-slate-200 mt-1.5 leading-relaxed">${escapeHtml(title)}</p>
-          </div>
-          <svg class="w-4 h-4 text-slate-500 transition-transform flex-shrink-0 group-hover:text-slate-300 chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div class="collapse-body">
-          <div class="px-4 sm:px-5 pb-4 pt-3 border-t border-white/5">
-            <div class="space-y-3">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Texto da resposta</label>
-                <textarea id="emr-text-${item.id}" rows="3" class="input-dark w-full px-3.5 py-2.5 rounded-xl text-sm resize-none" placeholder="Digite sua resposta ou comentário..."></textarea>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Link ou arquivo <span class="text-slate-600 normal-case">(opcional)</span></label>
-                <input id="emr-link-${item.id}" type="url" class="input-dark w-full px-3.5 py-2.5 rounded-xl text-sm" placeholder="https://drive.google.com/...">
-              </div>
-              <div class="flex justify-end">
-                <button onclick="submitEntry('${item.id}', this)" class="btn-submit text-white text-sm font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  Enviar
-                </button>
+            <svg class="chevron-icon" style="flex-shrink:0;margin-top:2px;" width="16" height="16" fill="none" stroke="#475569" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="collapse-content">
+            <div class="collapse-inner">
+              <div style="padding:0 16px 16px;border-top:1px solid rgba(255,255,255,.04);" class="sm:px-5">
+                <div style="padding-top:12px;">
+                  <label style="display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Texto da resposta</label>
+                  <textarea id="txt-${id}" rows="3" class="input-field" style="width:100%;padding:10px 14px;border-radius:12px;resize:none;" placeholder="Digite sua resposta ou comentario..."></textarea>
+                  <label style="display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;margin-top:10px;">Link <span style="color:#475569;text-transform:none;font-weight:400;">(opcional)</span></label>
+                  <input id="lnk-${id}" type="url" class="input-field" style="width:100%;padding:10px 14px;border-radius:12px;" placeholder="https://drive.google.com/...">
+                  <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+                    <button onclick="submitEntry('${id}',this)" class="btn-primary" style="color:white;font-size:13px;font-weight:600;padding:10px 20px;border-radius:12px;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      Enviar
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      `;
-      container.appendChild(card);
+        </div>`;
     });
+
+    container.innerHTML = html;
   } catch (err) {
-    loading.innerHTML = '<p class="text-rose-400 text-sm">Erro ao carregar checklist.</p>';
+    loading.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px 0;">Erro ao carregar checklist.</p>';
     console.error(err);
   }
 }
 
-function toggleCollapse(btn) {
+function emrToggle(btn) {
   const body = btn.nextElementSibling;
-  const chevron = btn.querySelector('.chevron');
-  const isOpen = body.classList.contains('open');
+  const chev = btn.querySelector('.chevron-icon');
+  const wasOpen = body.classList.contains('open');
 
-  document.querySelectorAll('.collapse-body.open').forEach(b => {
-    if (b !== body) {
-      b.classList.remove('open');
-      const ch = b.previousElementSibling.querySelector('.chevron');
-      if (ch) ch.style.transform = '';
+  // Close all others
+  document.querySelectorAll('#emr-items .collapse-content.open').forEach(el => {
+    if (el !== body) {
+      el.classList.remove('open');
+      const c = el.previousElementSibling?.querySelector('.chevron-icon');
+      if (c) c.classList.remove('rotated');
     }
   });
 
-  body.classList.toggle('open');
-  chevron.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+  body.classList.toggle('open', !wasOpen);
+  chev.classList.toggle('rotated', !wasOpen);
 }
 
 async function submitEntry(itemId, btn) {
-  const text = document.getElementById(`emr-text-${itemId}`).value.trim();
-  const link = document.getElementById(`emr-link-${itemId}`).value.trim();
-  if (!text && !link) { showToast('Preencha ao menos um campo.', 'error'); return; }
+  const txt = document.getElementById('txt-' + itemId)?.value.trim();
+  const lnk = document.getElementById('lnk-' + itemId)?.value.trim();
+  if (!txt && !lnk) { toast('Preencha ao menos um campo.', 'error'); return; }
 
-  const originalHtml = btn.innerHTML;
+  const origHtml = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span>Enviando...</span>';
+  btn.innerHTML = '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><circle opacity=".25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"/><path opacity=".75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Enviando...';
 
   try {
     await rest('checklist_entries', {
       method: 'POST',
       headers: { 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ item_id: itemId, entry_text: text || null, entry_link: link || null })
+      body: JSON.stringify({ item_id: itemId, entry_text: txt || null, entry_link: lnk || null })
     });
-    document.getElementById(`emr-text-${itemId}`).value = '';
-    document.getElementById(`emr-link-${itemId}`).value = '';
 
-    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span>Enviado!</span>';
-    btn.classList.add('!bg-emerald-500');
-    showToast('Enviado com sucesso!');
+    document.getElementById('txt-' + itemId).value = '';
+    document.getElementById('lnk-' + itemId).value = '';
+
+    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Enviado!';
+    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+    btn.style.boxShadow = '0 2px 16px rgba(16,185,129,.3)';
+    toast('Enviado com sucesso!');
 
     setTimeout(() => {
-      btn.innerHTML = originalHtml;
+      btn.innerHTML = origHtml;
       btn.disabled = false;
-      btn.classList.remove('!bg-emerald-500');
-      const body = btn.closest('.collapse-body');
+      btn.style.background = '';
+      btn.style.boxShadow = '';
+      const body = btn.closest('.collapse-inner')?.parentElement;
       if (body) {
         body.classList.remove('open');
-        const chevron = body.previousElementSibling?.querySelector('.chevron');
-        if (chevron) chevron.style.transform = '';
+        const chev = body.previousElementSibling?.querySelector('.chevron-icon');
+        if (chev) chev.classList.remove('rotated');
       }
     }, 1500);
   } catch (err) {
-    showToast('Erro ao enviar. Tente novamente.', 'error');
-    btn.innerHTML = originalHtml;
+    toast('Erro ao enviar.', 'error');
+    btn.innerHTML = origHtml;
     btn.disabled = false;
     console.error(err);
   }
 }
 
-// --- ADMIN VIEW ---
+// ── ADMIN VIEW ──
 
 async function loadAdmin() {
   const container = document.getElementById('admin-items');
   const loading = document.getElementById('admin-loading');
+
   try {
     const items = await rpc('admin_get_items', { admin_pass: 'admin' });
-    loading.classList.add('hidden');
+    loading.style.display = 'none';
     container.innerHTML = '';
-    if (!items || items.length === 0) {
-      container.innerHTML = '<p class="text-center text-slate-500 py-12">Nenhum item no checklist.</p>';
+
+    if (!items || !items.length) {
+      container.innerHTML = '<p style="text-align:center;color:#64748b;padding:60px 0;">Nenhum item.</p>';
       return;
     }
 
-    let doneCount = 0, pendingCount = 0;
-    items.forEach(item => {
-      if (!isSection(item.title) && !isEtapa(item.title)) {
-        if (item.completed) doneCount++; else pendingCount++;
+    let done = 0, crit = 0, pend = 0;
+    items.forEach(i => {
+      if (!isHeader(i.title)) {
+        if (i.completed) done++;
+        else if (getStatus(i.title) === 'critical') crit++;
+        else pend++;
       }
     });
+
     document.getElementById('admin-stats').classList.remove('hidden');
-    document.getElementById('admin-stat-done').textContent = `${doneCount} concluídos`;
-    document.getElementById('admin-stat-pending').textContent = `${pendingCount} pendentes`;
+    document.getElementById('admin-stats').classList.add('flex');
+    document.getElementById('stat-done').textContent = done + ' ok';
+    document.getElementById('stat-critical').textContent = crit + ' crit';
+    document.getElementById('stat-pending').textContent = pend + ' pend';
 
+    let html = '';
     items.forEach(item => {
-      if (isSection(item.title)) {
-        const sec = document.createElement('div');
-        sec.className = 'section-header rounded-xl px-4 sm:px-5 py-3 sm:py-4 mt-6 mb-3 first:mt-0';
-        sec.innerHTML = `
-          <div class="flex items-center justify-between">
-            <h2 class="text-xs sm:text-sm font-bold text-brand-300 uppercase tracking-wider">${escapeHtml(cleanTitle(item.title))}</h2>
-            <button onclick="adminDeleteItem('${item.id}')" class="text-slate-600 hover:text-rose-400 transition p-1 rounded" title="Excluir seção">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+      const title = item.title.trim();
+
+      if (isSection(title)) {
+        const clean = cleanTitle(title);
+        const num = getSectionNum(title);
+        html += `
+          <div class="section-divider rounded-xl px-4 sm:px-5 py-3 sm:py-4 mt-8 mb-3" style="${html ? '' : 'margin-top:0;'}">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${num ? `<span style="font-size:11px;font-weight:800;color:rgba(167,139,250,.6);background:rgba(124,58,237,.12);padding:2px 8px;border-radius:6px;">S${num}</span>` : ''}
+                <h2 style="font-size:12px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;">${escHtml(clean)}</h2>
+              </div>
+              <button onclick="adminDeleteItem('${item.id}')" style="background:none;border:none;cursor:pointer;color:#475569;padding:4px;border-radius:6px;" title="Excluir">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
           </div>`;
-        container.appendChild(sec);
         return;
       }
 
-      if (isEtapa(item.title)) {
-        const et = document.createElement('div');
-        et.className = 'etapa-header rounded-lg px-4 py-2.5 mt-4 mb-2';
-        et.innerHTML = `
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-semibold text-sky-300 uppercase tracking-wider">${escapeHtml(cleanTitle(item.title))}</h3>
-            <button onclick="adminDeleteItem('${item.id}')" class="text-slate-600 hover:text-rose-400 transition p-1 rounded" title="Excluir etapa">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+      if (isEtapa(title)) {
+        const clean = cleanTitle(title);
+        const label = getEtapaLabel(title);
+        html += `
+          <div class="etapa-divider rounded-lg px-4 py-2.5 mt-5 mb-2">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                ${label ? `<span style="font-size:10px;font-weight:800;color:rgba(56,189,248,.7);background:rgba(56,189,248,.1);padding:2px 7px;border-radius:5px;">Etapa ${label}</span>` : ''}
+                <h3 style="font-size:11px;font-weight:600;color:#7dd3fc;text-transform:uppercase;letter-spacing:.05em;">${escHtml(clean)}</h3>
+              </div>
+              <button onclick="adminDeleteItem('${item.id}')" style="background:none;border:none;cursor:pointer;color:#475569;padding:4px;border-radius:6px;" title="Excluir">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
           </div>`;
-        container.appendChild(et);
         return;
       }
 
-      const type = getItemType(item.title);
-      const num = getItemNumber(item.title);
-      const title = cleanTitle(item.title);
-      const borderClass = item.completed ? '' : type === 'critical' ? 'critical' : type === 'partial' ? 'partial' : 'pending';
+      const status = getStatus(title);
+      const num = getItemNum(title);
+      const clean = cleanTitle(title);
       const entryCount = item.entries ? item.entries.length : 0;
+      const completedClass = item.completed ? 'item-completed' : '';
+      const displayStatus = item.completed ? 'done' : status;
 
-      const entriesHtml = (item.entries && item.entries.length > 0)
-        ? item.entries.map(e => `
-          <div class="entry-hover entry-row flex items-start gap-3 py-3 border-b border-white/5 last:border-0 group">
-            <div class="flex-1 min-w-0">
-              ${e.entry_text ? `<p class="text-sm text-slate-300 leading-relaxed">${escapeHtml(e.entry_text)}</p>` : ''}
-              ${e.entry_link ? `<a href="${escapeHtml(e.entry_link)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition break-all mt-1">
-                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                ${escapeHtml(e.entry_link)}
+      let entriesBlock = '';
+      if (entryCount > 0) {
+        const entriesInner = item.entries.map(e => `
+          <div class="entry-item group" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03);">
+            <div style="flex:1;min-width:0;">
+              ${e.entry_text ? `<p style="font-size:13px;color:#94a3b8;line-height:1.5;margin:0;">${escHtml(e.entry_text)}</p>` : ''}
+              ${e.entry_link ? `<a href="${escHtml(e.entry_link)}" target="_blank" rel="noopener" style="font-size:12px;color:#a78bfa;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:3px;word-break:break-all;">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                ${escHtml(e.entry_link.length > 50 ? e.entry_link.slice(0, 50) + '...' : e.entry_link)}
               </a>` : ''}
-              <div class="flex items-center gap-2 mt-1.5">
-                <span class="text-[11px] text-slate-500">${formatDate(e.created_at)}</span>
-                <span class="text-[11px] text-slate-600">·</span>
-                <span class="text-[11px] text-slate-600">${timeAgo(e.created_at)}</span>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:10px;color:#475569;">${fmtDate(e.created_at)}</span>
+                <span style="font-size:10px;color:#334155;">·</span>
+                <span style="font-size:10px;color:#334155;">${timeAgo(e.created_at)}</span>
               </div>
             </div>
-            <button onclick="adminDeleteEntry('${e.id}')" class="btn-delete text-slate-600 hover:text-rose-400 transition flex-shrink-0 p-1 rounded hover:bg-rose-500/10" title="Excluir resposta">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <button onclick="adminDeleteEntry('${e.id}')" class="reveal-on-hover" style="background:none;border:none;cursor:pointer;color:#475569;padding:4px;border-radius:6px;flex-shrink:0;" title="Excluir resposta">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
-        `).join('')
-        : '<p class="text-sm text-slate-600 italic py-3">Nenhuma resposta ainda.</p>';
+        `).join('');
 
-      const card = document.createElement('div');
-      card.className = `item-card glass-light rounded-xl overflow-hidden ${borderClass} ${item.completed ? 'opacity-60' : ''}`;
-      card.innerHTML = `
-        <div class="px-4 sm:px-5 py-3.5 flex items-start gap-3">
-          <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="adminToggle('${item.id}')" class="custom-check mt-0.5">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap mb-1">
-              ${num ? `<span class="text-[11px] font-bold text-slate-500 tabular-nums bg-slate-800/50 px-1.5 py-0.5 rounded">${num}</span>` : ''}
-              ${!item.completed ? getBadge(type) : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Concluído</span>'}
-              ${entryCount > 0 ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/15">${entryCount} resposta${entryCount > 1 ? 's' : ''}</span>` : ''}
+        entriesBlock = `
+          <div style="padding:0 16px 12px;border-top:1px solid rgba(255,255,255,.04);" class="sm:px-5">
+            <div style="padding-top:8px;">
+              <p style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px;">Respostas (${entryCount})</p>
+              ${entriesInner}
             </div>
-            <input type="text" value="${escapeHtml(title)}" onblur="adminUpdateTitle('${item.id}', this.value, '${escapeHtml(item.title)}')" onkeydown="if(event.key==='Enter')this.blur()"
-              class="admin-title w-full text-sm text-slate-200 px-0 py-0.5 ${item.completed ? 'line-through text-slate-500' : ''}">
+          </div>`;
+      }
+
+      html += `
+        <div class="item-card status-${displayStatus} ${completedClass} rounded-xl mb-2 overflow-hidden">
+          <div style="padding:12px 16px;display:flex;align-items:flex-start;gap:10px;" class="sm:px-5">
+            <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="adminToggle('${item.id}')" class="check-box" style="margin-top:1px;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+                ${num ? `<span class="badge-num">${num}</span>` : ''}
+                ${badgeHtml(displayStatus)}
+                ${entryCount > 0 ? `<span class="badge badge-count">${entryCount} resposta${entryCount > 1 ? 's' : ''}</span>` : ''}
+              </div>
+              <input type="text" value="${escHtml(clean)}" onblur="adminUpdateTitle('${item.id}',this.value,'${escHtml(item.title).replace(/'/g, "\\'")}')" onkeydown="if(event.key==='Enter')this.blur()"
+                class="title-edit item-title" style="width:100%;font-size:13px;color:#cbd5e1;line-height:1.5;">
+            </div>
+            <button onclick="adminDeleteItem('${item.id}')" style="background:none;border:none;cursor:pointer;color:#475569;padding:4px;border-radius:6px;flex-shrink:0;" title="Excluir item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
           </div>
-          <button onclick="adminDeleteItem('${item.id}')" class="text-slate-600 hover:text-rose-400 transition flex-shrink-0 p-1 rounded hover:bg-rose-500/10 mt-0.5" title="Excluir item">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-          </button>
-        </div>
-        ${entryCount > 0 ? `
-        <div class="px-4 sm:px-5 pb-3 pt-0">
-          <div class="border-t border-white/5 pt-3">
-            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Respostas</p>
-            ${entriesHtml}
-          </div>
-        </div>` : ''}
-      `;
-      container.appendChild(card);
+          ${entriesBlock}
+        </div>`;
     });
+
+    container.innerHTML = html;
   } catch (err) {
-    loading.innerHTML = '<p class="text-rose-400 text-sm">Erro ao carregar painel.</p>';
+    loading.innerHTML = '<p style="color:#f87171;text-align:center;">Erro ao carregar painel.</p>';
     console.error(err);
   }
 }
 
-async function adminToggle(itemId) {
+async function adminToggle(id) {
   try {
-    await rpc('admin_toggle_item', { admin_pass: 'admin', p_item_id: itemId });
+    await rpc('admin_toggle_item', { admin_pass: 'admin', p_item_id: id });
     loadAdmin();
-  } catch (err) { showToast('Erro ao atualizar.', 'error'); console.error(err); }
+  } catch (err) { toast('Erro ao atualizar.', 'error'); console.error(err); }
 }
 
 async function adminAddItem() {
-  const title = prompt('Título do novo item:');
+  const title = prompt('Titulo do novo item:');
   if (!title || !title.trim()) return;
   try {
     await rpc('admin_create_item', { admin_pass: 'admin', p_title: title.trim(), p_position: 999 });
-    showToast('Item adicionado!');
+    toast('Item adicionado!');
     loadAdmin();
-  } catch (err) { showToast('Erro ao adicionar.', 'error'); console.error(err); }
+  } catch (err) { toast('Erro ao adicionar.', 'error'); console.error(err); }
 }
 
-async function adminUpdateTitle(itemId, newTitle, originalRaw) {
+async function adminUpdateTitle(id, newTitle, origRaw) {
   if (!newTitle.trim()) return;
-  const prefix = originalRaw.match(/^\[[\!\~x ]\]\s*/)?.[0] || '';
-  const fullTitle = prefix + newTitle.trim();
+  const prefix = origRaw.match(/^\[[\!\~x ]\]\s*/)?.[0] || '';
+  const full = prefix + newTitle.trim();
   try {
-    await rpc('admin_update_item_title', { admin_pass: 'admin', p_item_id: itemId, p_new_title: fullTitle });
-  } catch (err) { showToast('Erro ao atualizar título.', 'error'); console.error(err); }
+    await rpc('admin_update_item_title', { admin_pass: 'admin', p_item_id: id, p_new_title: full });
+  } catch (err) { toast('Erro ao atualizar titulo.', 'error'); console.error(err); }
 }
 
-async function adminDeleteEntry(entryId) {
+async function adminDeleteEntry(id) {
   if (!confirm('Excluir esta resposta?')) return;
   try {
-    await rpc('admin_delete_entry', { admin_pass: 'admin', p_entry_id: entryId });
-    showToast('Resposta excluída.');
+    await rpc('admin_delete_entry', { admin_pass: 'admin', p_entry_id: id });
+    toast('Resposta excluida.');
     loadAdmin();
-  } catch (err) { showToast('Erro ao excluir.', 'error'); console.error(err); }
+  } catch (err) { toast('Erro ao excluir.', 'error'); console.error(err); }
 }
 
-async function adminDeleteItem(itemId) {
+async function adminDeleteItem(id) {
   if (!confirm('Excluir este item e todas as suas respostas?')) return;
   try {
-    await rpc('admin_delete_item', { admin_pass: 'admin', p_item_id: itemId });
-    showToast('Item excluído.');
+    await rpc('admin_delete_item', { admin_pass: 'admin', p_item_id: id });
+    toast('Item excluido.');
     loadAdmin();
-  } catch (err) { showToast('Erro ao excluir.', 'error'); console.error(err); }
+  } catch (err) { toast('Erro ao excluir.', 'error'); console.error(err); }
 }
+
+// ── CSS animation keyframe for spinner ──
+const styleEl = document.createElement('style');
+styleEl.textContent = '@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}';
+document.head.appendChild(styleEl);
