@@ -3,103 +3,238 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Checklist EMR — Questões</title>
+  <title>Checklist de Insumos — Agente 1</title>
+  <meta name="theme-color" content="#0f172a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
           colors: {
-            brand: { 50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a5f' }
+            slate: { 925: '#0c1222' },
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
+            emerald: { 50:'#ecfdf5', 100:'#d1fae5', 400:'#34d399', 500:'#10b981', 600:'#059669' },
+            amber: { 50:'#fffbeb', 100:'#fef3c7', 400:'#fbbf24', 500:'#f59e0b', 600:'#d97706' },
+            rose: { 50:'#fff1f2', 100:'#ffe4e6', 400:'#fb7185', 500:'#f43f5e', 600:'#e11d48' },
+            violet: { 50:'#f5f3ff', 100:'#ede9fe', 400:'#a78bfa', 500:'#8b5cf6' },
+            sky: { 50:'#f0f9ff', 400:'#38bdf8', 500:'#0ea5e9' },
+            orange: { 50:'#fff7ed', 400:'#fb923c', 500:'#f97316' }
           }
         }
       }
     }
   </script>
   <style>
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-    .toast { animation: slideIn .3s ease, fadeOut .3s ease 2.2s forwards; }
-    @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-    .item-card { transition: all .2s ease; }
-    .item-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
-    .collapse-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
-    .collapse-body.open { max-height: 500px; }
-    .entry-row { animation: fadeIn .25s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { background: #0f172a; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,.5); }
+
+    /* Glass morphism */
+    .glass { background: rgba(15,23,42,.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(99,102,241,.15); }
+    .glass-light { background: rgba(255,255,255,.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.06); }
+
+    /* Toast */
+    .toast { animation: toastIn .4s cubic-bezier(.16,1,.3,1), toastOut .3s ease 2.4s forwards; }
+    @keyframes toastIn { from { transform: translateX(100%) scale(.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+    @keyframes toastOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.95); } }
+
+    /* Section headers */
+    .section-header { background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(139,92,246,.08)); border-left: 3px solid #6366f1; }
+    .etapa-header { background: linear-gradient(135deg, rgba(56,189,248,.08), rgba(99,102,241,.06)); border-left: 3px solid #38bdf8; }
+
+    /* Item cards */
+    .item-card { transition: all .25s cubic-bezier(.16,1,.3,1); }
+    .item-card:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,0,0,.25); }
+    .item-card.critical { border-left: 3px solid #f43f5e; }
+    .item-card.partial { border-left: 3px solid #f59e0b; }
+    .item-card.pending { border-left: 3px solid rgba(148,163,184,.3); }
+
+    /* Collapse */
+    .collapse-body { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(.16,1,.3,1), opacity .25s ease; opacity: 0; }
+    .collapse-body.open { max-height: 600px; opacity: 1; }
+
+    /* Badge pulse for critical items */
+    .badge-critical { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+
+    /* Entry animation */
+    .entry-row { animation: entrySlide .3s cubic-bezier(.16,1,.3,1); }
+    @keyframes entrySlide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* Checkbox custom */
+    .custom-check { appearance: none; -webkit-appearance: none; width: 22px; height: 22px; border: 2px solid rgba(148,163,184,.3); border-radius: 6px; cursor: pointer; transition: all .2s ease; position: relative; flex-shrink: 0; background: rgba(255,255,255,.03); }
+    .custom-check:checked { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: transparent; }
+    .custom-check:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .custom-check:hover { border-color: rgba(99,102,241,.5); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+    .custom-check:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+
+    /* Submit button glow */
+    .btn-submit { background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 2px 12px rgba(99,102,241,.3); transition: all .2s ease; }
+    .btn-submit:hover { box-shadow: 0 4px 20px rgba(99,102,241,.5); transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(99,102,241,.3); }
+
+    /* Progress bar */
+    .progress-fill { background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa); transition: width .6s cubic-bezier(.16,1,.3,1); }
+
+    /* Input focus glow */
+    .input-dark { background: rgba(255,255,255,.04); border: 1px solid rgba(148,163,184,.15); color: #e2e8f0; transition: all .2s ease; }
+    .input-dark:focus { background: rgba(255,255,255,.06); border-color: rgba(99,102,241,.5); box-shadow: 0 0 0 3px rgba(99,102,241,.1); outline: none; }
+    .input-dark::placeholder { color: rgba(148,163,184,.5); }
+
+    /* Login card */
+    .login-card { background: linear-gradient(145deg, rgba(15,23,42,.9), rgba(30,41,59,.8)); border: 1px solid rgba(99,102,241,.2); }
+
+    /* Gradient text */
+    .text-gradient { background: linear-gradient(135deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* Ambient glow */
+    .ambient-glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: .07; pointer-events: none; z-index: 0; }
+
+    /* Smooth page transitions */
+    .page-enter { animation: pageIn .4s cubic-bezier(.16,1,.3,1); }
+    @keyframes pageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Admin title input */
+    .admin-title { background: transparent; border: none; border-bottom: 1px solid transparent; transition: all .2s ease; }
+    .admin-title:hover { border-bottom-color: rgba(148,163,184,.2); }
+    .admin-title:focus { border-bottom-color: rgba(99,102,241,.5); outline: none; box-shadow: 0 1px 0 0 rgba(99,102,241,.5); }
+
+    /* Floating label */
+    .floating-label { transition: all .2s ease; }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .ambient-glow { width: 300px; height: 300px; }
+      .item-card:hover { transform: none; }
+    }
+
+    /* Delete button hover */
+    .btn-delete { opacity: 0; transition: opacity .2s ease; }
+    .entry-hover:hover .btn-delete { opacity: 1; }
+    @media (max-width: 640px) { .btn-delete { opacity: 1; } }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen text-slate-200 overflow-x-hidden">
+
+  <!-- Ambient background glows -->
+  <div class="ambient-glow bg-brand-500" style="top:-200px;left:-200px;"></div>
+  <div class="ambient-glow bg-violet-500" style="bottom:-200px;right:-200px;"></div>
 
   <!-- Toast container -->
-  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
 
-  <!-- LOGIN -->
-  <div id="page-login" class="flex items-center justify-center min-h-screen px-4">
-    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-      <div class="text-center mb-6">
-        <div class="w-14 h-14 bg-brand-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <!-- ============ LOGIN ============ -->
+  <div id="page-login" class="flex items-center justify-center min-h-screen px-4 relative z-10">
+    <div class="login-card rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-500/20">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <h1 class="text-xl font-bold text-gray-800">Checklist EMR</h1>
-        <p class="text-gray-500 text-sm mt-1">Faça login para continuar</p>
+        <h1 class="text-2xl font-bold text-white">Checklist de Insumos</h1>
+        <p class="text-slate-400 text-sm mt-1.5">Agente 1 — Atualização de Questões e Flashcards</p>
       </div>
       <form id="login-form" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
-          <input id="login-user" type="text" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Seu usuário">
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Usuário</label>
+          <input id="login-user" type="text" required class="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="Seu usuário" autocomplete="username">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-          <input id="login-pass" type="password" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Sua senha">
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Senha</label>
+          <input id="login-pass" type="password" required class="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="Sua senha" autocomplete="current-password">
         </div>
-        <div id="login-error" class="text-red-500 text-sm hidden">Usuário ou senha incorretos.</div>
-        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg transition">Entrar</button>
+        <div id="login-error" class="text-rose-400 text-sm hidden flex items-center gap-1.5">
+          <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          <span>Usuário ou senha incorretos.</span>
+        </div>
+        <button type="submit" class="btn-submit w-full text-white font-semibold py-3 rounded-xl text-sm mt-2">Entrar</button>
       </form>
     </div>
   </div>
 
-  <!-- EMR VIEW -->
-  <div id="page-emr" class="hidden">
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <!-- ============ EMR VIEW ============ -->
+  <div id="page-emr" class="hidden relative z-10">
+    <header class="glass sticky top-0 z-40">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-          <h1 class="font-bold text-gray-800">Checklist EMR</h1>
+          <div>
+            <h1 class="font-bold text-white text-sm leading-tight">Checklist de Insumos</h1>
+            <p class="text-[11px] text-slate-400">Equipe EMR</p>
+          </div>
         </div>
-        <button onclick="logout()" class="text-sm text-gray-500 hover:text-gray-700 transition">Sair</button>
+        <div class="flex items-center gap-3">
+          <div id="emr-progress-wrap" class="hidden sm:flex items-center gap-2">
+            <div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="emr-progress-bar" class="progress-fill h-full rounded-full" style="width:0%"></div>
+            </div>
+            <span id="emr-progress-text" class="text-[11px] text-slate-400 font-medium tabular-nums"></span>
+          </div>
+          <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/5">Sair</button>
+        </div>
       </div>
     </header>
-    <main class="max-w-2xl mx-auto px-4 py-6">
-      <div id="emr-items" class="space-y-3"></div>
-      <div id="emr-loading" class="text-center py-12 text-gray-400">Carregando...</div>
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-6 page-enter">
+      <div id="emr-items" class="space-y-2"></div>
+      <div id="emr-loading" class="flex items-center justify-center py-20">
+        <div class="flex items-center gap-3 text-slate-400">
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+          <span class="text-sm">Carregando checklist...</span>
+        </div>
+      </div>
     </main>
   </div>
 
-  <!-- ADMIN VIEW -->
-  <div id="page-admin" class="hidden">
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 bg-brand-800 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+  <!-- ============ ADMIN VIEW ============ -->
+  <div id="page-admin" class="hidden relative z-10">
+    <header class="glass sticky top-0 z-40">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </div>
-          <h1 class="font-bold text-gray-800">Painel Admin</h1>
+          <div>
+            <h1 class="font-bold text-white text-sm leading-tight">Painel Admin</h1>
+            <p class="text-[11px] text-slate-400">Gerenciamento completo</p>
+          </div>
         </div>
-        <button onclick="logout()" class="text-sm text-gray-500 hover:text-gray-700 transition">Sair</button>
+        <div class="flex items-center gap-2">
+          <div id="admin-stats" class="hidden sm:flex items-center gap-3 mr-2">
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <span id="admin-stat-done" class="text-[11px] text-slate-400 font-medium tabular-nums">0</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-slate-500"></div>
+              <span id="admin-stat-pending" class="text-[11px] text-slate-400 font-medium tabular-nums">0</span>
+            </div>
+          </div>
+          <button onclick="adminAddItem()" class="btn-submit text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <span class="hidden sm:inline">Adicionar</span>
+          </button>
+          <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/5">Sair</button>
+        </div>
       </div>
     </header>
-    <main class="max-w-3xl mx-auto px-4 py-6">
-      <div class="flex justify-end mb-4">
-        <button onclick="adminAddItem()" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-          Adicionar Item
-        </button>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 page-enter">
+      <div id="admin-items" class="space-y-2"></div>
+      <div id="admin-loading" class="flex items-center justify-center py-20">
+        <div class="flex items-center gap-3 text-slate-400">
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+          <span class="text-sm">Carregando painel...</span>
+        </div>
       </div>
-      <div id="admin-items" class="space-y-4"></div>
-      <div id="admin-loading" class="text-center py-12 text-gray-400">Carregando...</div>
     </main>
   </div>
 
